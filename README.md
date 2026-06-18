@@ -26,12 +26,12 @@ Every cell below is computed live from real bytes by
 result), not entered by hand. Green = the property holds; red = it fails. The
 reference holds every property; each alternative technique fails at least one.
 
-![Property coverage: reference holds every property; each alternative fails at least one](./graphs/coverage_matrix.svg)
+![Property coverage: reference holds every property; each alternative fails at least one](https://raw.githubusercontent.com/chopmob-cloud/substrate-comparisons/master/graphs/coverage_matrix.svg)
 
 At realistic agentic-payment rates the cost of one of those failures
 (exactly-once under a coarse timestamp) is most of the payments:
 
-![Real payments dropped at scale: second-precision loses 98-99.9%, integer epoch-ms loses none](./graphs/scale_collapse.svg)
+![Real payments dropped at scale: second-precision loses 98-99.9%, integer epoch-ms loses none](https://raw.githubusercontent.com/chopmob-cloud/substrate-comparisons/master/graphs/scale_collapse.svg)
 
 ### Vectors: us vs other substrate vectors, cross-validated
 
@@ -41,7 +41,7 @@ trustworthy if independent implementations agree on it byte-for-byte. The
 independently cross-validated; the common alternative is a single-implementation
 vector set with no independent agreement.
 
-![Cross-validation: AlgoVoi JCS (RFC 8785) Substrate, 8 independent implementations, 832/832 byte-for-byte; single-implementation set, none](./graphs/cross_validation.svg)
+![Cross-validation: AlgoVoi JCS (RFC 8785) Substrate, 8 independent implementations, 832/832 byte-for-byte; single-implementation set, none](https://raw.githubusercontent.com/chopmob-cloud/substrate-comparisons/master/graphs/cross_validation.svg)
 
 | Vector set | Independent implementations | Byte-for-byte agreement | Sets / vectors |
 | --- | :---: | :---: | :---: |
