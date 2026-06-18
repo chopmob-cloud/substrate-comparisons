@@ -1,0 +1,12 @@
+substrate-comparisons
+Copyright 2026 Christopher Hopley / AlgoVoi (chopmob-cloud)
+
+A reproducible comparison of substrate methods for agentic-payment records.
+It compares techniques and names no implementation, project, or person.
+
+The reference substrate used by the demonstrations is published as
+algovoi-substrate (PyPI / npm) under the Apache License, Version 2.0, and is
+documented at https://docs.algovoi.co.uk/canonicalisation-substrate.
+
+When redistributing this work or derivative works, retain this NOTICE per
+Apache License, Version 2.0, Section 4(d).
