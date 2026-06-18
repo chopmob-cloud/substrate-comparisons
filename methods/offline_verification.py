@@ -19,6 +19,9 @@ import sys
 
 from algovoi_substrate import action_ref
 
+# action_ref / the reference here is the AlgoVoi implementation, adapted to
+# AlgoVoi's own design (JCS RFC 8785 + integer-ms timestamp_ms; canon jcs-rfc8785-v1).
+
 TS = 1716494400123
 FIELDS = dict(agent_id="agent-1", action_type="payment", scope="settlement")
 

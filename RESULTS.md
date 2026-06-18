@@ -103,8 +103,8 @@ with the exact evidence.
 
 `methods/settlement_binding.py`
 
-- Content-addressed binding `SHA-256(JCS({action_ref, settlement_ref}))` changes
-  when the action is swapped (swap detected). A forward-id receipt (`rcpt-0001`)
+- The substrate's `settlement_action_binding` (the four-field `binding_ref`)
+  changes when the action is swapped (swap detected). A forward-id receipt (`rcpt-0001`)
   is unchanged when the action is swapped (swap NOT detected) -> the id does not
   bind the action; it only points at it.
 
@@ -122,6 +122,29 @@ with the exact evidence.
 
 Architectural, not a byte demo. Verification requires querying a live issuer
 endpoint, so the record cannot be verified from itself.
+
+## 10. Amount as a JSON number -> fails exactly-once (precision loss)
+
+`methods/amount_precision.py`
+
+- Two atomic amounts one unit apart, `9007199254740993` and `9007199254740992`, both
+  round to the same float64 -> one identity (a distinct payment dropped). The AlgoVoi
+  string-encoded amount keeps them distinct; strict RFC 8785 rejects the unsafe integer.
+
+## 11. Ad-hoc number serialization -> fails byte-reproducibility
+
+`methods/number_canonicalization.py`
+
+- `1.0` and `1` are the same value but serialize to different bytes under an ad-hoc
+  encoder -> two implementations diverge. JCS maps both to `1`.
+
+## 12. Rail-coupled identity -> not correlatable across rails
+
+`methods/rail_agnostic.py`
+
+- The AlgoVoi `action_ref` is identical across Base/Solana/Hedera (no rail in the
+  identity) -> correlatable and de-duplicable across rails. A rail-coupled identity
+  changes per rail, so the same action on two rails reads as two unrelated actions.
 
 ## The cross-cutting failure: reconciliation
 

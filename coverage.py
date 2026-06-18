@@ -14,8 +14,10 @@ import hashlib
 import json
 import sys
 
-from algovoi_substrate import action_ref, canonicalize
+from algovoi_substrate import action_ref, canonicalize, sha256_jcs
 
+# `action_ref` / the named reference is the AlgoVoi implementation, adapted to
+# AlgoVoi's own design (JCS RFC 8785 + integer-ms timestamp_ms; canon jcs-rfc8785-v1).
 BASE = dict(agent_id="agent-1", action_type="payment", scope="settlement")
 PROPS = ["Exactly-once", "Byte-reproducible", "Offline-verify", "Adversarial-safe"]
 
@@ -65,6 +67,18 @@ def _operator_offline_verifiable() -> bool:
     return action_ref(timestamp_ms=1716494400123, **BASE) == "att-9f3c1d"
 
 
+def _exactly_once_float_amount() -> bool:
+    fa = _sha(json.dumps({"amount": float(9007199254740993)}, separators=(",", ":")))
+    fb = _sha(json.dumps({"amount": float(9007199254740992)}, separators=(",", ":")))
+    return fa != fb  # holds only if distinct (float64 rounds them equal -> False)
+
+
+def _byte_repro_adhoc_number() -> bool:
+    a = _sha(json.dumps({"rate": 1.0}, separators=(",", ":")))
+    b = _sha(json.dumps({"rate": 1}, separators=(",", ":")))
+    return a == b  # holds only if equal (1.0 vs 1 diverge -> False)
+
+
 def _ref_all_hold() -> bool:
     x = action_ref(agent_id="agent-1", action_type="screen",
                    scope="acme:order-42", timestamp_ms=1716494400123)
@@ -84,6 +98,8 @@ def build_matrix() -> list[tuple[str, list[bool]]]:
         ("camelCase field naming",                         [True, _byte_repro_camelcase(), True, True]),
         ("forward-id / operator-report binding",           [True, True, True, _forward_binding_tamper_evident()]),
         ("operator-attestation (no content-address)",      [True, True, _operator_offline_verifiable(), True]),
+        ("amount as JSON number (float64)",                [_exactly_once_float_amount(), True, True, True]),
+        ("ad-hoc number serialization (1.0 vs 1)",         [True, _byte_repro_adhoc_number(), True, True]),
     ]
 
 

@@ -19,6 +19,16 @@ nothing but Python, `algovoi-substrate`, and SHA-256. If you disagree, run the
 demo and read the bytes. A full failure map with the exact hashes is in
 [`RESULTS.md`](./RESULTS.md).
 
+> **What `action_ref` means here.** Throughout, `action_ref` is the **AlgoVoi
+> implementation** of action_ref, adapted to AlgoVoi's own design:
+> `SHA-256(JCS(RFC 8785)({agent_id, action_type, scope, timestamp_ms}))` with an
+> integer-millisecond `timestamp_ms`, canon version `jcs-rfc8785-v1`. The bare name
+> `action_ref` is used across the ecosystem in mutually incompatible forms (string
+> timestamps, bare concatenation); this comparison's named reference is specifically
+> the AlgoVoi construction, and every reference value is produced by the
+> `algovoi-substrate` package itself (`action_ref`, `sha256_jcs`,
+> `settlement_action_binding`).
+
 ## Coverage at a glance
 
 Every cell below is computed live from real bytes by [`coverage.py`](./coverage.py)
@@ -35,6 +45,8 @@ every property; each alternative technique fails at least one.
 | camelCase field naming | yes | **no** | yes | yes |
 | forward-id / operator-report binding | yes | yes | yes | **no** |
 | operator-attestation (no content-address) | yes | yes | **no** | yes |
+| amount as JSON number (float64) | **no** | yes | yes | yes |
+| ad-hoc number serialization (1.0 vs 1) | yes | **no** | yes | yes |
 
 Run `python coverage.py` to regenerate this table from real bytes.
 
@@ -202,7 +214,7 @@ shows the identities never match.
 
 | Technique | Tamper-evident (action swap detected) | Demo |
 | --- | :---: | --- |
-| AlgoVoi content-addressed binding `SHA-256(JCS({action_ref, settlement_ref}))` | yes | [`methods/settlement_binding.py`](./methods/settlement_binding.py) |
+| AlgoVoi content-addressed binding (substrate `settlement_action_binding` -> `binding_ref`) | yes | [`methods/settlement_binding.py`](./methods/settlement_binding.py) |
 | forward-id / operator-report (settlement carries an assigned receipt id) | **no** | same |
 
 `methods/settlement_binding.py` swaps the action and shows the content-addressed
@@ -215,6 +227,36 @@ forward id does not actually bind.
 | --- | :---: | --- |
 | AlgoVoi content-addressed identity | yes | [`methods/offline_verification.py`](./methods/offline_verification.py) |
 | operator-attestation (operator-assigned id, operator-signed) | **no** (needs issuer key/endpoint; proves assertion, not truth) | same |
+
+## Amount precision
+
+| Technique | Exactly-once | Demo |
+| --- | :---: | --- |
+| AlgoVoi atomic amount as a string | yes | [`methods/amount_precision.py`](./methods/amount_precision.py) |
+| amount as a JSON number (float64) | **no** (rounds past 2^53; two amounts -> one identity) | same |
+
+Atomic on-chain amounts exceed JSON's safe-integer range; a JSON-number amount
+silently rounds, collapsing distinct payments. AlgoVoi encodes the atomic amount as
+a string (and strict RFC 8785 rejects the unsafe integer outright).
+
+## Number canonicalization
+
+| Technique | Byte-reproducible across implementations | Demo |
+| --- | :---: | --- |
+| AlgoVoi JCS (RFC 8785) number form | yes (`1.0` -> `1`, `1e3` -> `1000`) | [`methods/number_canonicalization.py`](./methods/number_canonicalization.py) |
+| ad-hoc serialization (preserves spelling) | **no** (`1.0` != `1`) | same |
+
+## Rail-agnostic identity
+
+The AlgoVoi `action_ref` carries no settlement rail, so the same action has one
+identity across Base, Solana, Hedera, and every other rail, and a verifier
+correlates and de-duplicates it across rails. A rail-coupled identity changes per
+rail, so the same action on two rails looks like two unrelated actions.
+
+| Technique | Correlatable across rails | Demo |
+| --- | :---: | --- |
+| AlgoVoi action_ref (no rail in the identity) | yes | [`methods/rail_agnostic.py`](./methods/rail_agnostic.py) |
+| rail-coupled identity (rail folded into the hash) | **no** | same |
 
 ## Reconciliation: do independent parties agree?
 

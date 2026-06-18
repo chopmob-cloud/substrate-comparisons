@@ -19,14 +19,12 @@ from __future__ import annotations
 import hashlib
 import sys
 
-from algovoi_substrate import action_ref, canonicalize
+from algovoi_substrate import action_ref, sha256_jcs
+
+# action_ref is the AlgoVoi implementation, adapted to AlgoVoi's own design
+# (JCS RFC 8785 + integer-ms timestamp_ms; canon jcs-rfc8785-v1).
 
 TS = 1716494400123
-
-
-def _jcs_sha(obj: dict) -> str:
-    c = canonicalize(obj)
-    return hashlib.sha256(c.encode("utf-8") if isinstance(c, str) else c).hexdigest()
 
 
 def main() -> int:
@@ -40,7 +38,7 @@ def main() -> int:
     snake = action_ref(agent_id="agent-1", action_type="payment",
                        scope="settlement", timestamp_ms=TS)
     # A camelCase implementation of the same record.
-    camel = _jcs_sha({"agentId": "agent-1", "actionType": "payment",
+    camel = sha256_jcs({"agentId": "agent-1", "actionType": "payment",
                       "scope": "settlement", "timestampMs": TS})
 
     print("[AlgoVoi JCS (RFC 8785) Substrate -- snake_case action_ref]")
