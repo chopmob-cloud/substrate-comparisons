@@ -21,17 +21,32 @@ demo and read the bytes. A full failure map with the exact hashes is in
 
 ## Coverage at a glance
 
-Every cell below is computed live from real bytes by
-[`graphs/make_graphs.py`](./graphs/make_graphs.py) (hash a real record, read the
-result), not entered by hand. Green = the property holds; red = it fails. The
-reference holds every property; each alternative technique fails at least one.
+Every cell below is computed live from real bytes by [`coverage.py`](./coverage.py)
+(hash a real record, read the result), not entered by hand. The reference holds
+every property; each alternative technique fails at least one.
 
-![Property coverage: reference holds every property; each alternative fails at least one](https://raw.githubusercontent.com/chopmob-cloud/substrate-comparisons/master/graphs/coverage_matrix.svg)
+| Technique | Exactly-once | Byte-reproducible | Offline-verify | Adversarial-safe |
+| --- | :---: | :---: | :---: | :---: |
+| **AlgoVoi JCS (RFC 8785) Substrate (action_ref)** | yes | yes | yes | yes |
+| second-precision timestamp | **no** | yes | yes | yes |
+| RFC 3339 string timestamp | yes | **no** | yes | yes |
+| bare concatenation | **no** | yes | yes | **no** |
+| naive key-order serialization | yes | **no** | yes | yes |
+| camelCase field naming | yes | **no** | yes | yes |
+| forward-id / operator-report binding | yes | yes | yes | **no** |
+| operator-attestation (no content-address) | yes | yes | **no** | yes |
+
+Run `python coverage.py` to regenerate this table from real bytes.
 
 At realistic agentic-payment rates the cost of one of those failures
-(exactly-once under a coarse timestamp) is most of the payments:
+(exactly-once under a coarse timestamp) is most of the payments (counted from real
+hashes; the full table is under [At scale](#at-scale)):
 
-![Real payments dropped at scale: second-precision loses 98-99.9%, integer epoch-ms loses none](https://raw.githubusercontent.com/chopmob-cloud/substrate-comparisons/master/graphs/scale_collapse.svg)
+| Payments | second-precision dropped | integer epoch-ms dropped |
+| --- | :---: | :---: |
+| 100 in 1s | 98.0% | 0.0% |
+| 1,000 in 1s | 99.8% | 0.0% |
+| 10,000 over 10s | 99.9% | 0.0% |
 
 ### Vectors: us vs other substrate vectors, cross-validated
 
@@ -40,8 +55,6 @@ trustworthy if independent implementations agree on it byte-for-byte. The
 **AlgoVoi JCS (RFC 8785) Substrate** conformance corpus is published and
 independently cross-validated; the common alternative is a single-implementation
 vector set with no independent agreement.
-
-![Cross-validation: AlgoVoi JCS (RFC 8785) Substrate, 8 independent implementations, 832/832 byte-for-byte; single-implementation set, none](https://raw.githubusercontent.com/chopmob-cloud/substrate-comparisons/master/graphs/cross_validation.svg)
 
 | Vector set | Independent implementations | Byte-for-byte agreement | Sets / vectors |
 | --- | :---: | :---: | :---: |

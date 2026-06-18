@@ -41,9 +41,9 @@ def main() -> int:
         print(f"\n>>> methods/{m}")
         if _run(p) != 0:
             fails.append(m)
-    print("\n>>> graphs/make_graphs.py")
-    if _run(os.path.join(HERE, "graphs", "make_graphs.py")) != 0:
-        fails.append("graphs/make_graphs.py")
+    print("\n>>> coverage.py")
+    if _run(os.path.join(HERE, "coverage.py")) != 0:
+        fails.append("coverage.py")
     print("\n" + "=" * 60)
     if fails:
         print("FAILED:", ", ".join(fails))
