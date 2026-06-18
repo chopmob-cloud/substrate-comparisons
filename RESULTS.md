@@ -1,0 +1,107 @@
+<!--
+  Apache-2.0. Copyright 2026 Christopher Hopley / AlgoVoi (chopmob-cloud).
+-->
+
+# Results: where each method fails
+
+Every line below is produced by a script in this repo. The hashes are real and
+reproducible: run the named demo and you will get the same bytes. No
+implementation, project, or person is named; methods are compared by technique.
+
+The reference is the AlgoVoi substrate (integer epoch-millisecond + JCS), which
+holds every property. Each alternative encoding fails at least one, shown here
+with the exact evidence.
+
+## 1. Second precision -> fails exactly-once
+
+`methods/timestamp_encoding.py`, `methods/scale.py`
+
+- Two distinct payments in the same second collapse to one identity:
+  - payment at `+123ms` -> `12824b4b65956ba181ffe5acf9b50df853df9a08ebe53e3e1e859e5ea305433e`
+  - payment at `+876ms` -> `12824b4b65956ba181ffe5acf9b50df853df9a08ebe53e3e1e859e5ea305433e`
+  - identical. The second payment is indistinguishable from a retry and is dropped.
+- At scale (counted from real hashes):
+
+  | Payments | second precision dropped | integer-ms dropped |
+  | --- | :---: | :---: |
+  | 100 in 1s | 99 (99.0%) | 0 |
+  | 1,000 in 1s | 999 (99.9%) | 0 |
+  | 10,000 over 10s | 9,990 (99.9%) | 0 |
+  | 60,000 over 60s | 59,940 (99.9%) | 0 |
+  | 100,000 over 100s | 99,900 (99.9%, only 100 survive) | 0 |
+
+- Consequence: at any realistic agentic rate, more than 99% of real payments are
+  silently dropped.
+
+## 2. RFC 3339 string timestamp -> fails byte-reproducibility
+
+`methods/timestamp_encoding.py`
+
+- The same moment, two encodings, two identities:
+  - string `"2024-05-23T20:00:00.123Z"` -> `dd5c4e9d9242c12514672bed0e904775cda4441904c93fbb5704743f13890206`
+  - integer `1716494400123` -> `66c9ec8bd3496493c064134e00736bcbd336826f3e25f0de2f81ad7d349512cf`
+- Consequence: a party on the string form and a party on the integer form can
+  never prove they mean the same payment. No cross-verification.
+
+## 3. Ad-hoc / key-order-dependent canonicalization -> fails byte-reproducibility
+
+`methods/canonicalization.py`
+
+- The same object in two key orders hashes differently under a naive serializer:
+  - order A -> `4bfb0c549c7ad02ae82432d6f11265849e68ed8e0307bc0ae4812851e3f7d6e7`
+  - order B -> `90d6b51638af0608a9c168c795edde5eae8e4181877eebf521a951c1ea981aba`
+- Under JCS, both orders give `cce8e66518e20342a34c2911486b5eb9bfea39c1bf44f2025241d41341089fe9`.
+- Consequence: two implementations disagree on the identity of the identical
+  record. Interop is impossible.
+
+## 4. Naive "hash whatever" (no validation) -> fails adversarial rejection
+
+`methods/adversarial_rejection.py`
+
+- The reference rejects every malformed input; a naive method accepts each and
+  mints a clean-looking identity:
+
+  | Adversarial input | reference | naive |
+  | --- | --- | --- |
+  | RFC 3339 string timestamp | rejected (`ActionRefError`) | accepted -> `f03eec3a3653...` |
+  | negative timestamp | rejected (`ActionRefError`) | accepted -> `6360c922f9db...` |
+  | boolean timestamp | rejected (`ActionRefError`) | accepted -> `074cf50685fc...` |
+  | non-hex identifier | rejected (`TransactionalError`) | accepted -> `f721dff5889e...` |
+  | short identifier | rejected (`TransactionalError`) | accepted -> `1636c148ad94...` |
+
+- Consequence: a malformed or forged record looks settled. No isolation.
+
+## 5. Issuer callback / read-at-decision -> fails offline verifiability
+
+Architectural, not a byte demo. Verification requires querying a live issuer
+endpoint, so the record cannot be verified from itself.
+
+## The cross-cutting failure: reconciliation
+
+`methods/reconciliation.py`
+
+Four parties compute the identity of one payment:
+
+| Party | Encoding | Identity | Reconciles |
+| --- | --- | --- | :---: |
+| 1 | integer-ms + JCS | `66c9ec8bd3...` | yes |
+| 2 | integer-ms + JCS, different key order | `66c9ec8bd3...` | yes |
+| 3 | RFC 3339 string timestamp | `dd5c4e9d92...` | no |
+| 4 | second precision | `12824b4b65...` | no |
+
+Only the two canonical parties share an identity. Party 3 and party 4 each land
+somewhere different, so they cannot reconcile with the canonical parties, and
+they do not agree with each other either. Each non-canonical form is an island.
+
+## Summary
+
+| Property | integer-ms + JCS (reference) | second precision | RFC 3339 string | ad-hoc canon. | naive | issuer callback |
+| --- | :---: | :---: | :---: | :---: | :---: | :---: |
+| exactly-once | yes | **no** | yes | - | - | - |
+| byte-reproducible | yes | yes | **no** | **no** | - | - |
+| offline verifiable | yes | yes | yes | yes | yes | **no** |
+| rejects malformed | yes | yes | yes | - | **no** | - |
+| parties reconcile | yes | no | no | no | - | - |
+
+The reference is the only method that holds all of them. Reproduce any cell:
+`pip install algovoi-substrate` and run the named demo.

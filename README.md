@@ -10,23 +10,23 @@ with **reproducible bytes, not opinion**.
 
 It compares those methods against a **reference**: the published AlgoVoi
 substrate, whose two load-bearing properties are pinned by conformance vectors
-you can run yourself — `action_ref_exactly_once_v1` (exactly-once) and
+you can run yourself - `action_ref_exactly_once_v1` (exactly-once) and
 `adversarial_isolation_v1` (rejects malformed input). The alternative methods are
-named only by *technique* — no project, no person. Every verdict below is
+named only by *technique* - no project, no person. Every verdict below is
 produced by a script in this repo that you can run offline, with nothing but
 Python, `algovoi-substrate`, and SHA-256. If you disagree, run the demo and read
-the bytes.
+the bytes. A full failure map with the exact hashes is in [`RESULTS.md`](./RESULTS.md).
 
 ## The reference: what the substrate holds
 
 The comparison is anchored on two properties the published substrate proves, both
 reproducible from a single command:
 
-- **Exactly-once** (`action_ref_exactly_once_v1`) — a genuine retry collapses to
+- **Exactly-once** (`action_ref_exactly_once_v1`) - a genuine retry collapses to
   the same identity (skipped, no double spend); a distinct action stays distinct;
   a non-committed state cannot pass as settled. Demo:
   [`methods/secondary_attempts.py`](./methods/secondary_attempts.py).
-- **Adversarial rejection** (`adversarial_isolation_v1`) — malformed inputs (an
+- **Adversarial rejection** (`adversarial_isolation_v1`) - malformed inputs (an
   RFC 3339 timestamp, a negative, a boolean, a non-hex or short identifier) are
   rejected at the validation layer, not hashed into a clean-looking identity.
   Demo: [`methods/adversarial_rejection.py`](./methods/adversarial_rejection.py).
@@ -39,13 +39,13 @@ reproducibility and offline verifiability.
 A method is judged only against the three properties that actually matter for a
 regulated agentic payment record:
 
-- **Exactly-once identity** — two operationally distinct actions must get two
+- **Exactly-once identity** - two operationally distinct actions must get two
   distinct identifiers. If two real payments can collapse to one identifier, the
   second is indistinguishable from a retry and can be silently dropped.
-- **Cross-implementation byte-reproducibility** — the same logical record must
+- **Cross-implementation byte-reproducibility** - the same logical record must
   hash to the same bytes in every language and on every platform, or independent
   parties cannot verify each other.
-- **Offline verifiability** — a holder of the record can verify it with a hash
+- **Offline verifiability** - a holder of the record can verify it with a hash
   function and a JSON parser, without calling back to the issuer.
 
 ## Timestamp encoding
@@ -118,7 +118,7 @@ produces different bytes for the same object, so two implementations disagree.
 **Reconciliation** is when two or more independent parties to the same payment
 each compute the record's identity from their own copy of the data, then check
 that they arrived at the same answer. It is how a payer, a payee, and an auditor
-confirm they are describing the same event — without trusting any one party's
+confirm they are describing the same event - without trusting any one party's
 word for it, and without a central server to ask.
 
 For that to work, every party must derive the *same bytes* from the same record.
@@ -126,8 +126,8 @@ So reconciliation is only possible on a shared canonical form: if two parties
 encode the record differently, they compute different identities and can never
 prove they are talking about the same payment.
 
-A regulated payment has several such parties — payer, payee, auditor,
-facilitator — so this is the real test of a substrate, not a nicety.
+A regulated payment has several such parties - payer, payee, auditor,
+facilitator - so this is the real test of a substrate, not a nicety.
 [`methods/reconciliation.py`](./methods/reconciliation.py) runs four parties over
 one payment:
 
@@ -139,7 +139,7 @@ one payment:
 | 4 | second precision | no |
 
 The two canonical parties agree byte-for-byte even though one ordered its fields
-differently — JCS absorbs that. The two non-canonical parties each land on a
+differently - JCS absorbs that. The two non-canonical parties each land on a
 different identity, so they cannot reconcile with the canonical parties **or with
 each other**. Interoperability is not a feature added later; it is a property of
 the form. Only the canonical form produces an identity independent parties can
