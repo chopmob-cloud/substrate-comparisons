@@ -113,6 +113,28 @@ secondary-attempt handling are the same property viewed from two sides.
 identical bytes regardless of input key order, while a naive serialization
 produces different bytes for the same object, so two implementations disagree.
 
+## Reconciliation: do independent parties agree?
+
+A regulated payment has several parties — payer, payee, auditor, facilitator —
+and the record is only auditable if every party independently arrives at the
+*same* identity for it. That is the real test, and it is only possible on a
+shared canonical form. [`methods/reconciliation.py`](./methods/reconciliation.py)
+runs four parties over one payment:
+
+| Party | Encoding | Reconciles |
+| --- | --- | :---: |
+| 1 | integer-ms + JCS | yes |
+| 2 | integer-ms + JCS, fields in a different key order | yes |
+| 3 | RFC 3339 string timestamp | no |
+| 4 | second precision | no |
+
+The two canonical parties agree byte-for-byte even though one ordered its fields
+differently — JCS absorbs that. The two non-canonical parties each land on a
+different identity, so they cannot reconcile with the canonical parties **or with
+each other**. Interoperability is not a feature added later; it is a property of
+the form. Only the canonical form produces an identity independent parties can
+share.
+
 ## Verification model (architectural, not a byte demo)
 
 | Method | Offline verifiable | Note |
@@ -132,6 +154,7 @@ python methods/adversarial_rejection.py  # reference: rejects malformed input
 python methods/timestamp_encoding.py
 python methods/scale.py
 python methods/canonicalization.py
+python methods/reconciliation.py        # do independent parties agree?
 ```
 
 Each prints its comparison and exits `0` when the demonstrated properties hold.
