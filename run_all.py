@@ -24,6 +24,7 @@ METHODS = [
     "amount_precision.py",
     "number_canonicalization.py",
     "rail_agnostic.py",
+    "pqc_signatures.py",
     "adversarial_rejection.py",
     "reconciliation.py",
     "scale.py",

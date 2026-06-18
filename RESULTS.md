@@ -146,6 +146,15 @@ endpoint, so the record cannot be verified from itself.
   identity) -> correlatable and de-duplicable across rails. A rail-coupled identity
   changes per rail, so the same action on two rails reads as two unrelated actions.
 
+## 13. Classical-only signatures -> not quantum-resistant
+
+`methods/pqc_signatures.py`
+
+- AlgoVoi natively signs the canonical record with Falcon-1024 (FIPS 206, NIST L5) and
+  ML-DSA-65 (FIPS 204, NIST L3); both verify over the JCS canonical bytes via
+  `verify_artefact`. A classical-only stack (Ed25519/ES256) is not quantum-resistant, so
+  a long-retention record loses non-repudiation once a quantum computer can forge it.
+
 ## The cross-cutting failure: reconciliation
 
 `methods/reconciliation.py`

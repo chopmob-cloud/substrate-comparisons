@@ -258,6 +258,23 @@ rail, so the same action on two rails looks like two unrelated actions.
 | AlgoVoi action_ref (no rail in the identity) | yes | [`methods/rail_agnostic.py`](./methods/rail_agnostic.py) |
 | rail-coupled identity (rail folded into the hash) | **no** | same |
 
+## Post-quantum signatures
+
+The AlgoVoi substrate natively signs and verifies the canonical record with
+post-quantum algorithms, over the same JCS (RFC 8785) bytes as the classical path. A
+long-retention payment record signed only with a classical scheme loses its
+non-repudiation once those signatures become forgeable by a quantum computer.
+
+| Signing | Quantum-resistant | Demo |
+| --- | :---: | --- |
+| AlgoVoi native PQC: Falcon-1024 (FIPS 206, L5) + ML-DSA-65 (FIPS 204, L3) | yes | [`methods/pqc_signatures.py`](./methods/pqc_signatures.py) |
+| classical-only: Ed25519 / ES256 | **no** | same |
+
+`methods/pqc_signatures.py` produces real Falcon-1024 and ML-DSA-65 signatures over an
+`action_ref` record and verifies them with the substrate's `verify_artefact` (requires
+`algovoi-substrate-pqc`). The algorithm-family classification is the substrate's own
+registry; the PQC signatures cover the same `expected_jcs_bytes_b64` as the classical path.
+
 ## Reconciliation: do independent parties agree?
 
 **Reconciliation** is when two or more independent parties to the same payment
