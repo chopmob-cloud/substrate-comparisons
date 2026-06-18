@@ -88,7 +88,37 @@ with the exact evidence.
   one identity. It is also forgeable -- an actor controlling one field can
   re-target another action's identity.
 
-## 6. Issuer callback / read-at-decision -> fails offline verifiability
+## 6. camelCase field naming -> fails byte-reproducibility (cross-impl)
+
+`methods/field_naming.py`
+
+- The same logical action under two field-name conventions:
+  - snake_case (AlgoVoi): `agent_id, action_type, scope, timestamp_ms`
+  - camelCase: `agentId, actionType, scope, timestampMs`
+- The two JCS-canonical forms hash to different identities -> the two
+  implementations can never cross-verify. JCS fixes key order, not field names;
+  the field set must be pinned.
+
+## 7. Forward-id / operator-report binding -> not tamper-evident
+
+`methods/settlement_binding.py`
+
+- Content-addressed binding `SHA-256(JCS({action_ref, settlement_ref}))` changes
+  when the action is swapped (swap detected). A forward-id receipt (`rcpt-0001`)
+  is unchanged when the action is swapped (swap NOT detected) -> the id does not
+  bind the action; it only points at it.
+
+## 8. Operator-attestation -> fails offline verifiability
+
+`methods/offline_verification.py`
+
+- A content-addressed identity is the hash of the bytes; a holder recomputes it
+  offline and compares. An operator-assigned id is not a function of the bytes, so
+  recomputing from the action yields a different value -> it cannot be verified
+  offline; it requires the operator's key/endpoint, and that only proves the
+  operator asserted it, not that it is true.
+
+## 9. Issuer callback / read-at-decision -> fails offline verifiability
 
 Architectural, not a byte demo. Verification requires querying a live issuer
 endpoint, so the record cannot be verified from itself.

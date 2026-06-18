@@ -67,6 +67,26 @@ def _concat_adversarial_safe() -> bool:
     return _concat_collision_free()  # same root cause: field boundaries lost
 
 
+def _byte_repro_camelcase() -> bool:
+    """camelCase vs snake_case field names: same record, different bytes."""
+    snake = action_ref(timestamp_ms=1716494400123, **BASE)
+    camel = _sha(canonicalize({"agentId": "agent-1", "actionType": "payment",
+                               "scope": "settlement", "timestampMs": 1716494400123}))
+    return snake == camel  # holds only if equal (they diverge -> False)
+
+
+def _forward_binding_tamper_evident() -> bool:
+    """forward-id binding is a constant id; it does not change when the action is
+    swapped, so the swap is not detected (compare: content-addressed binding does)."""
+    return "rcpt-0001" != "rcpt-0001"  # always False: the id is unchanged on swap
+
+
+def _operator_offline_verifiable() -> bool:
+    """operator-assigned id is not a function of the record bytes, so it cannot be
+    recomputed/verified offline."""
+    return action_ref(timestamp_ms=1716494400123, **BASE) == "att-9f3c1d"  # False
+
+
 def _ref_all_hold() -> bool:
     """reference: integer-ms + JCS keeps the same two actions distinct."""
     x = action_ref(agent_id="agent-1", action_type="screen",
@@ -88,6 +108,9 @@ def build_matrix() -> list[tuple[str, list[bool]]]:
         ("RFC 3339 string timestamp",                [True, _byte_repro_rfc3339(), True, True]),
         ("bare concatenation",                        [_concat_collision_free(), True, True, _concat_adversarial_safe()]),
         ("naive key-order serialization",            [True, _byte_repro_naive(), True, True]),
+        ("camelCase field naming",                   [True, _byte_repro_camelcase(), True, True]),
+        ("forward-id / operator-report binding",     [True, True, True, _forward_binding_tamper_evident()]),
+        ("operator-attestation (no content-address)", [True, True, _operator_offline_verifiable(), True]),
     ]
     return rows
 

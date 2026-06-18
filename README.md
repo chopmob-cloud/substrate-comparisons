@@ -172,6 +172,37 @@ standardises on a delimiter-joined `action_ref` inherits this collision; the
 structured form does not have it. It is also an attack surface: an actor who
 controls one field can re-target another action's identity.
 
+## Field-name determinism
+
+JCS fixes key *order* and value encoding, but it canonicalises whatever field
+*names* it is given. The field set must be pinned, or two implementations diverge.
+
+| Technique | Byte-reproducible across implementations | Demo |
+| --- | :---: | --- |
+| AlgoVoi snake_case field set (`agent_id, action_type, scope, timestamp_ms`) | yes | [`methods/field_naming.py`](./methods/field_naming.py) |
+| camelCase variant (`agentId, actionType, scope, timestampMs`) | **no** | same |
+
+`methods/field_naming.py` hashes the same logical action under both conventions and
+shows the identities never match.
+
+## Settlement &lt;-&gt; action binding
+
+| Technique | Tamper-evident (action swap detected) | Demo |
+| --- | :---: | --- |
+| AlgoVoi content-addressed binding `SHA-256(JCS({action_ref, settlement_ref}))` | yes | [`methods/settlement_binding.py`](./methods/settlement_binding.py) |
+| forward-id / operator-report (settlement carries an assigned receipt id) | **no** | same |
+
+`methods/settlement_binding.py` swaps the action and shows the content-addressed
+binding breaks (caught), while the forward id is unchanged (not caught) -- so a
+forward id does not actually bind.
+
+## Offline verifiability
+
+| Technique | Verifiable from bytes alone (no issuer call) | Demo |
+| --- | :---: | --- |
+| AlgoVoi content-addressed identity | yes | [`methods/offline_verification.py`](./methods/offline_verification.py) |
+| operator-attestation (operator-assigned id, operator-signed) | **no** (needs issuer key/endpoint; proves assertion, not truth) | same |
+
 ## Reconciliation: do independent parties agree?
 
 **Reconciliation** is when two or more independent parties to the same payment
