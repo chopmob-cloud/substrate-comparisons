@@ -71,7 +71,24 @@ with the exact evidence.
 
 - Consequence: a malformed or forged record looks settled. No isolation.
 
-## 5. Issuer callback / read-at-decision -> fails offline verifiability
+## 5. Bare concatenation -> fails exactly-once (forgeable collision)
+
+`methods/concatenation.py`
+
+- Identity by `SHA-256(agent_id : action_type : scope : timestamp_ms)`. Two
+  operationally distinct actions whose `:` falls on different field boundaries:
+  - X: `action_type="screen"`, `scope="acme:order-42"`
+  - Y: `action_type="screen:acme"`, `scope="order-42"`
+  - both join to `agent-1:screen:acme:order-42:1716494400123` ->
+    `3c903e974c86c8b3469f008e23e78543339a221ec7f73091690e383fd969feb1` (identical).
+- The structured reference keeps them distinct:
+  - X -> `5a73c2c33a0fdf95b83313a545f86cd81e0f2534948d6e8ce36cfd0c4a08763d`
+  - Y -> `3dbdb483f16f0f6502c521850fb78d0dc91729e49976a94e5a9c44547c3fb133`
+- Consequence: field boundaries are unrecoverable, so two distinct actions share
+  one identity. It is also forgeable -- an actor controlling one field can
+  re-target another action's identity.
+
+## 6. Issuer callback / read-at-decision -> fails offline verifiability
 
 Architectural, not a byte demo. Verification requires querying a live issuer
 endpoint, so the record cannot be verified from itself.

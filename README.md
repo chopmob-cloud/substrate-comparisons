@@ -17,6 +17,23 @@ produced by a script in this repo that you can run offline, with nothing but
 Python, `algovoi-substrate`, and SHA-256. If you disagree, run the demo and read
 the bytes. A full failure map with the exact hashes is in [`RESULTS.md`](./RESULTS.md).
 
+## Coverage at a glance
+
+Every cell below is computed live from real bytes by
+[`graphs/make_graphs.py`](./graphs/make_graphs.py) (hash a real record, read the
+result), not entered by hand. Green = the property holds; red = it fails. The
+reference holds every property; each alternative technique fails at least one.
+
+![Property coverage: reference holds every property; each alternative fails at least one](./graphs/coverage_matrix.svg)
+
+At realistic agentic-payment rates the cost of one of those failures
+(exactly-once under a coarse timestamp) is most of the payments:
+
+![Real payments dropped at scale: second-precision loses 98-99.9%, integer epoch-ms loses none](./graphs/scale_collapse.svg)
+
+Regenerate everything (methods + results + graphs) from one command:
+`python run_all.py`.
+
 ## The reference: what the substrate holds
 
 The comparison is anchored on two properties the published substrate proves, both
@@ -112,6 +129,27 @@ secondary-attempt handling are the same property viewed from two sides.
 `methods/canonicalization.py` shows that JCS hashes the same logical object to
 identical bytes regardless of input key order, while a naive serialization
 produces different bytes for the same object, so two implementations disagree.
+
+## Concatenation vs structured identity
+
+A common shortcut derives the action identity by joining the fields into one
+string and hashing it: `SHA-256(agent_id : action_type : scope : timestamp_ms)`.
+The delimiter can also appear *inside* a field value, so the field boundaries are
+not recoverable and two operationally distinct actions can produce the identical
+joined string -- and therefore the identical identity.
+
+| Method | Exactly-once | Adversarial-safe | Demo |
+| --- | :---: | :---: | --- |
+| structured object under JCS (`action_ref`) | yes | yes | [`methods/concatenation.py`](./methods/concatenation.py) |
+| delimiter-joined concatenation | **no** | **no** (forgeable collision) | same |
+
+[`methods/concatenation.py`](./methods/concatenation.py) shows it with real
+hashes: two distinct actions (`action_type="screen", scope="acme:order-42"` vs
+`action_type="screen:acme", scope="order-42"`) collapse to **one** concatenation
+identity, while the structured `action_ref` keeps them distinct. A coalition that
+standardises on a delimiter-joined `action_ref` inherits this collision; the
+structured form does not have it. It is also an attack surface: an actor who
+controls one field can re-target another action's identity.
 
 ## Reconciliation: do independent parties agree?
 
