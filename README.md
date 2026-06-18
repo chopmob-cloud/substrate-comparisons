@@ -115,11 +115,21 @@ produces different bytes for the same object, so two implementations disagree.
 
 ## Reconciliation: do independent parties agree?
 
-A regulated payment has several parties — payer, payee, auditor, facilitator —
-and the record is only auditable if every party independently arrives at the
-*same* identity for it. That is the real test, and it is only possible on a
-shared canonical form. [`methods/reconciliation.py`](./methods/reconciliation.py)
-runs four parties over one payment:
+**Reconciliation** is when two or more independent parties to the same payment
+each compute the record's identity from their own copy of the data, then check
+that they arrived at the same answer. It is how a payer, a payee, and an auditor
+confirm they are describing the same event — without trusting any one party's
+word for it, and without a central server to ask.
+
+For that to work, every party must derive the *same bytes* from the same record.
+So reconciliation is only possible on a shared canonical form: if two parties
+encode the record differently, they compute different identities and can never
+prove they are talking about the same payment.
+
+A regulated payment has several such parties — payer, payee, auditor,
+facilitator — so this is the real test of a substrate, not a nicety.
+[`methods/reconciliation.py`](./methods/reconciliation.py) runs four parties over
+one payment:
 
 | Party | Encoding | Reconciles |
 | --- | --- | :---: |
