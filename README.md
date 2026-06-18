@@ -8,10 +8,31 @@ Several methods are in use for building tamper-evident records of agentic
 payments. This repository puts the common ones side by side and lets you decide
 with **reproducible bytes, not opinion**.
 
-It names no implementation, no project, and no person. It compares *techniques*.
-Every verdict below is produced by a script in this repo that you can run
-yourself, offline, with nothing but Python, `algovoi-substrate`, and SHA-256.
-If you disagree with a verdict, run the demo and read the bytes.
+It compares those methods against a **reference**: the published AlgoVoi
+substrate, whose two load-bearing properties are pinned by conformance vectors
+you can run yourself — `action_ref_exactly_once_v1` (exactly-once) and
+`adversarial_isolation_v1` (rejects malformed input). The alternative methods are
+named only by *technique* — no project, no person. Every verdict below is
+produced by a script in this repo that you can run offline, with nothing but
+Python, `algovoi-substrate`, and SHA-256. If you disagree, run the demo and read
+the bytes.
+
+## The reference: what the substrate holds
+
+The comparison is anchored on two properties the published substrate proves, both
+reproducible from a single command:
+
+- **Exactly-once** (`action_ref_exactly_once_v1`) — a genuine retry collapses to
+  the same identity (skipped, no double spend); a distinct action stays distinct;
+  a non-committed state cannot pass as settled. Demo:
+  [`methods/secondary_attempts.py`](./methods/secondary_attempts.py).
+- **Adversarial rejection** (`adversarial_isolation_v1`) — malformed inputs (an
+  RFC 3339 timestamp, a negative, a boolean, a non-hex or short identifier) are
+  rejected at the validation layer, not hashed into a clean-looking identity.
+  Demo: [`methods/adversarial_rejection.py`](./methods/adversarial_rejection.py).
+
+Every method below is measured against these two properties, plus byte
+reproducibility and offline verifiability.
 
 ## What "works" means here
 
@@ -106,7 +127,10 @@ is listed for completeness and marked as such.
 
 ```bash
 pip install algovoi-substrate
+python methods/secondary_attempts.py     # reference: exactly-once
+python methods/adversarial_rejection.py  # reference: rejects malformed input
 python methods/timestamp_encoding.py
+python methods/scale.py
 python methods/canonicalization.py
 ```
 
