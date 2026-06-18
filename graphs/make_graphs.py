@@ -83,7 +83,7 @@ PROPS = ["Exactly-once", "Byte-reproducible", "Offline-verify", "Adversarial-saf
 def build_matrix() -> list[tuple[str, list[bool]]]:
     ref = _ref_all_hold()
     rows = [
-        ("Reference: integer-ms + JCS (action_ref)", [ref, True, True, True]),
+        ("AlgoVoi JCS (RFC 8785) Substrate — action_ref", [ref, True, True, True]),
         ("second-precision timestamp",               [_exactly_once_second_precision(), True, True, True]),
         ("RFC 3339 string timestamp",                [True, _byte_repro_rfc3339(), True, True]),
         ("bare concatenation",                        [_concat_collision_free(), True, True, _concat_adversarial_safe()]),
@@ -158,10 +158,40 @@ def write_scale_chart(points, path):
     open(path, "w", encoding="utf-8").write("\n".join(p))
 
 
+# ---- cross-validation depth (sourced from the public corpus manifest) ------
+# Numbers are the published AlgoVoi JCS (RFC 8785) Substrate conformance corpus
+# (chopmob-cloud/algovoi-jcs-conformance-vectors, manifest v0.9.0): 8 independent
+# implementations across 8 languages, 21 sets / 166 vectors, 832/832 byte-for-byte.
+# The baseline is the common alternative: a single-implementation vector set with
+# no independent cross-validation. Sourced (not a local byte run); see README link.
+CROSSVAL = [
+    ("AlgoVoi JCS (RFC 8785) Substrate", 8, "832/832 byte-for-byte, 21 sets / 166 vectors"),
+    ("single-implementation vector set", 1, "no independent cross-validation"),
+]
+
+
+def write_crossval_chart(path):
+    W, H, top, lh, barmax, x0 = 720, 150, 70, 50, 300, 320
+    p = [f'<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}" viewBox="0 0 {W} {H}" font-family="-apple-system,Segoe UI,Helvetica,Arial,sans-serif">']
+    p.append(f'<rect width="{W}" height="{H}" fill="white"/>')
+    p.append(f'<text x="14" y="26" font-size="17" font-weight="700" fill="{INK}">Conformance vectors: independent cross-validation</text>')
+    p.append(f'<text x="14" y="44" font-size="11" fill="{MUTE}">independent implementations that agree byte-for-byte on the same vectors. Sourced from the published corpus manifest.</text>')
+    maxn = max(n for _, n, _ in CROSSVAL)
+    for i, (lab, n, note) in enumerate(CROSSVAL):
+        y = top + lh * i
+        col = GREEN if n >= 8 else RED
+        p.append(f'<text x="14" y="{y+16:.0f}" font-size="12" font-weight="{"700" if n>=8 else "400"}" fill="{INK}">{_esc(lab)}</text>')
+        p.append(f'<rect x="{x0}" y="{y+4}" width="{max(barmax*n/maxn,2):.1f}" height="18" rx="3" fill="{col}"/>')
+        p.append(f'<text x="{x0+max(barmax*n/maxn,2)+8:.0f}" y="{y+18:.0f}" font-size="11" fill="{INK}">{n} impl{"s" if n!=1 else ""} — {_esc(note)}</text>')
+    p.append('</svg>')
+    open(path, "w", encoding="utf-8").write("\n".join(p))
+
+
 def main() -> int:
     os.makedirs(HERE, exist_ok=True)
     rows = build_matrix()
     write_coverage_matrix(rows, os.path.join(HERE, "coverage_matrix.svg"))
+    write_crossval_chart(os.path.join(HERE, "cross_validation.svg"))
     pts = [("100 in 1s", *scale_drops(100, 1000)),
            ("1,000 in 1s", *scale_drops(1000, 1000)),
            ("10,000 over 10s", *scale_drops(10000, 10000))]
@@ -173,7 +203,7 @@ def main() -> int:
     print("\nscale drops:")
     for lab, sec, ms in pts:
         print(f"  {lab:<18} second-precision {sec:5.1f}%   integer-ms {ms:4.1f}%")
-    print("\nwrote graphs/coverage_matrix.svg, graphs/scale_collapse.svg")
+    print("\nwrote graphs/coverage_matrix.svg, graphs/scale_collapse.svg, graphs/cross_validation.svg")
     return 0
 
 

@@ -8,14 +8,16 @@ Several methods are in use for building tamper-evident records of agentic
 payments. This repository puts the common ones side by side and lets you decide
 with **reproducible bytes, not opinion**.
 
-It compares those methods against a **reference**: the published AlgoVoi
-substrate, whose two load-bearing properties are pinned by conformance vectors
-you can run yourself - `action_ref_exactly_once_v1` (exactly-once) and
-`adversarial_isolation_v1` (rejects malformed input). The alternative methods are
-named only by *technique* - no project, no person. Every verdict below is
-produced by a script in this repo that you can run offline, with nothing but
-Python, `algovoi-substrate`, and SHA-256. If you disagree, run the demo and read
-the bytes. A full failure map with the exact hashes is in [`RESULTS.md`](./RESULTS.md).
+It compares those methods against a named **reference**: the **AlgoVoi JCS
+(RFC 8785) Substrate**, whose load-bearing properties are pinned by conformance
+vectors you can run yourself - `action_ref_exactly_once_v1` (exactly-once) and
+`adversarial_isolation_v1` (rejects malformed input) - and cross-validated across
+8 independent implementations (832/832 byte-for-byte). The reference is named; the
+alternative methods are compared by *technique* (no competitor named). Every
+verdict below is produced by a script in this repo that you can run offline, with
+nothing but Python, `algovoi-substrate`, and SHA-256. If you disagree, run the
+demo and read the bytes. A full failure map with the exact hashes is in
+[`RESULTS.md`](./RESULTS.md).
 
 ## Coverage at a glance
 
@@ -30,6 +32,25 @@ At realistic agentic-payment rates the cost of one of those failures
 (exactly-once under a coarse timestamp) is most of the payments:
 
 ![Real payments dropped at scale: second-precision loses 98-99.9%, integer epoch-ms loses none](./graphs/scale_collapse.svg)
+
+### Vectors: us vs other substrate vectors, cross-validated
+
+A comparison is only as good as the vectors behind it, and a vector set is only
+trustworthy if independent implementations agree on it byte-for-byte. The
+**AlgoVoi JCS (RFC 8785) Substrate** conformance corpus is published and
+independently cross-validated; the common alternative is a single-implementation
+vector set with no independent agreement.
+
+![Cross-validation: AlgoVoi JCS (RFC 8785) Substrate, 8 independent implementations, 832/832 byte-for-byte; single-implementation set, none](./graphs/cross_validation.svg)
+
+| Vector set | Independent implementations | Byte-for-byte agreement | Sets / vectors |
+| --- | :---: | :---: | :---: |
+| **AlgoVoi JCS (RFC 8785) Substrate** | **8** (8 languages, incl. the RFC 8785 author's Java) | **832/832** | 21 / 166 |
+| single-implementation vector set | 1 | none reported | varies |
+
+Source: the public corpus
+[`chopmob-cloud/algovoi-jcs-conformance-vectors`](https://github.com/chopmob-cloud/algovoi-jcs-conformance-vectors)
+(manifest pins the sets, vectors, and the cross-validation runs). Run them yourself.
 
 Regenerate everything (methods + results + graphs) from one command:
 `python run_all.py`.
