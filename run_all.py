@@ -23,6 +23,8 @@ METHODS = [
     "field_naming.py",
     "settlement_binding.py",
     "replay_resistance.py",
+    "policy_change.py",
+    "fail_closed.py",
     "offline_verification.py",
     "jws_reencoding.py",
     "amount_precision.py",
