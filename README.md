@@ -369,40 +369,6 @@ each other**. Interoperability is not a feature added later; it is a property of
 the form. Only the canonical form produces an identity independent parties can
 share.
 
-## Decision integrity: policy snapshot and fail-closed posture
-
-The substrate is not only a way to name a record; it is a way to make a gateway
-decision auditable. Two properties matter once a policy is enforced at runtime.
-
-**Policy rotation (P -> P').** A policy in force today is replaced tomorrow. A
-signed decision that binds only the action content is identical whether the gate
-ran policy P or P', so after a rotation no auditor can prove which policy admitted
-the action.
-
-| Decision binding | Policy provable after rotation | Demo |
-| --- | :---: | --- |
-| action content only | **no** | [`methods/policy_change.py`](./methods/policy_change.py) |
-| AlgoVoi: policy snapshot bound in the signed decision | yes | same |
-
-`methods/policy_change.py` evaluates one action under two policy snapshots and
-shows the unbound decision is byte-identical across the rotation, while binding
-`policy_ref = SHA-256(JCS(policy))` inside the signed decision makes each decision
-distinct and verifiable against the exact policy that produced it.
-
-**Fail-closed before invocation.** When verification cannot succeed - the receipt
-is missing, or the call was tampered with after the receipt was signed - the gate
-must deny and not invoke the tool.
-
-| Default posture | Tampered / no-receipt call | Demo |
-| --- | :---: | --- |
-| fail-open (admit unless explicit DENY) | **invoked** | [`methods/fail_closed.py`](./methods/fail_closed.py) |
-| AlgoVoi: fail-closed (deny unless verified ALLOW) | denied | same |
-
-`methods/fail_closed.py` recomputes the `action_ref` from the live call and runs a
-clean call, a tampered call, and a no-receipt call through both postures: fail-open
-invokes the tampered and no-receipt calls, fail-closed denies both and invokes only
-on a verified ALLOW.
-
 ## Verification model (architectural, not a byte demo)
 
 | Method | Offline verifiable | Note |
