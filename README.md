@@ -12,7 +12,7 @@ It compares those methods against a named **reference**: the **AlgoVoi JCS
 (RFC 8785) Substrate**, whose load-bearing properties are pinned by conformance
 vectors you can run yourself - `action_ref_exactly_once_v1` (exactly-once) and
 `adversarial_isolation_v1` (rejects malformed input) - and cross-validated across
-8 independent implementations (832/832 byte-for-byte). The reference is named; the
+8 independent implementations (880/880 byte-for-byte). The reference is named; the
 alternative methods are compared by *technique* (no competitor named). Every
 verdict below is produced by a script in this repo that you can run offline, with
 nothing but Python, `algovoi-substrate`, and SHA-256. If you disagree, run the
@@ -82,7 +82,7 @@ vector set with no independent agreement.
 
 | Vector set | Independent implementations | Byte-for-byte agreement | Sets / vectors |
 | --- | :---: | :---: | :---: |
-| **AlgoVoi JCS (RFC 8785) Substrate** | **8** (8 languages, incl. the RFC 8785 author's Java) | **832/832** | 21 / 166 |
+| **AlgoVoi JCS (RFC 8785) Substrate** | **8** (8 languages, incl. the RFC 8785 author's Java) | **880/880** | 27 / 213 |
 | single-implementation vector set | 1 | none reported | varies |
 
 Source: the public corpus
