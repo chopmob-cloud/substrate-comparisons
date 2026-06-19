@@ -155,6 +155,28 @@ endpoint, so the record cannot be verified from itself.
   `verify_artefact`. A classical-only stack (Ed25519/ES256) is not quantum-resistant, so
   a long-retention record loses non-repudiation once a quantum computer can forge it.
 
+## 14. Policy version label / operator attestation -> misses silent policy rotation
+
+`methods/policy_binding.py`
+
+- A record sealed under policy `P` is recomputed under an edited `P'` that keeps the
+  identical `policy_id` and version label (`aml.transfer/v1`), changing only a rule
+  (amount ceiling raised, jurisdiction block dropped) -- a *silent* rotation.
+- Content-addressed policy binding (`policy_bound_ref` over the policy bytes, bound
+  to a frozen subject):
+  - `policy_ref(P)`  -> `sha256:acc943b05fa8e8096e5b313288bc4f919cc2661f167c833770509a53049afa1c`
+  - `policy_ref(P')` -> `sha256:8d3fadb3a401a230c8ef200ae50e4442fcfbf67c0b799860474396758847c8ed`
+  - sealed under `P`     -> `sha256:2bbfbddf937276723df8d96e55697a2e5714c006e874d30123d2e44891ade08b`
+  - recompute under `P'` -> `sha256:0fe26cbee4a1d9121d139697c0c95d88cd4a905114f7235ba58fa8998b651174`
+  - the two differ -> rotation detected (the record fails to recompute).
+- Version label: `aml.transfer/v1` under both `P` and `P'` -> unchanged -> rotation
+  NOT detected. Operator attestation ("policy X applied") -> likewise unchanged.
+- Consequence: with a label or an attestation, an operator can edit the rules under
+  a sealed record and the record shows nothing. Only the content hash binds the
+  policy bytes. (`policy_ref(P)` reproduces the published `policy_binding_v1`
+  conformance value. Detectability only -- acting on the mismatch is a runtime
+  verifier decision, not part of the construction.)
+
 ## The cross-cutting failure: reconciliation
 
 `methods/reconciliation.py`

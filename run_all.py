@@ -22,6 +22,7 @@ METHODS = [
     "unicode_normalization.py",
     "field_naming.py",
     "settlement_binding.py",
+    "policy_binding.py",
     "replay_resistance.py",
     "offline_verification.py",
     "jws_reencoding.py",

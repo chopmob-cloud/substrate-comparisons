@@ -50,6 +50,18 @@ every property; each alternative technique fails at least one.
 
 Run `python coverage.py` to regenerate this table from real bytes.
 
+Two **bindings** sit on a separate axis from the four properties above - they ask
+whether a later tamper or a *silent* policy change is detectable from the record
+alone. The content-addressed bindings catch it; an operator-assigned id or a
+version *label* does not (`coverage.py` computes these from real bytes too):
+
+| Binding technique | Change detected from the record alone |
+| --- | :---: |
+| **AlgoVoi settlement_action_binding (action swap)** | yes |
+| forward-id / operator-report (action swap) | **no** |
+| **AlgoVoi policy_bound_ref (silent policy rotation)** | yes |
+| policy id/version label (or operator attestation) | **no** |
+
 At realistic agentic-payment rates the cost of one of those failures
 (exactly-once under a coarse timestamp) is most of the payments (counted from real
 hashes; the full table is under [At scale](#at-scale)):
@@ -251,6 +263,31 @@ shows the identities never match.
 binding breaks (caught), while the forward id is unchanged (not caught) -- so a
 forward id does not actually bind.
 
+## Policy binding (which ruleset was in force, and silent rotation)
+
+A record should be able to prove *which* policy was in force when it was sealed,
+and a later change to that policy should be detectable from the record alone. The
+hard case is a **silent rotation**: the operator keeps the same `policy_id` and
+version *label* but edits a rule. A content hash of the policy catches it; a
+label or an "operator applied policy X" attestation does not.
+
+| Technique | Silent rotation detected (same label, edited rule) | Demo |
+| --- | :---: | --- |
+| AlgoVoi content-addressed binding (`policy_bound_ref` over the policy bytes, bound to a frozen subject) | yes | [`methods/policy_binding.py`](./methods/policy_binding.py) |
+| policy id/version label carried in the record | **no** | same |
+| operator attestation ("policy X was applied") | **no** | same |
+
+`methods/policy_binding.py` seals a record under policy `P`, then recomputes under
+an edited `P'` that keeps the identical `policy_id`/version label: the
+`policy_bound_ref` changes (rotation caught), while the label and the attestation
+are unchanged (rotation invisible). `policy_ref` / `policy_bound_ref` are the
+`algovoi-policy-binding` package (Apache-2.0), additive over the frozen substrate.
+
+This proves *detectability* - version-provable and rotation-detectable, offline,
+from bytes. Acting on a detected mismatch (rejecting the record) is a runtime
+verifier decision, not a property of the construction; it is listed here as the
+detectability demo, not an enforcement claim.
+
 ## Replay resistance (instance-binding vs content-binding)
 
 A content-addressed identity is derived from content alone, so two distinct
@@ -382,12 +419,14 @@ is listed for completeness and marked as such.
 ## Run it
 
 ```bash
-pip install algovoi-substrate
+pip install algovoi-substrate algovoi-policy-binding
 python methods/secondary_attempts.py     # reference: exactly-once
 python methods/adversarial_rejection.py  # reference: rejects malformed input
 python methods/timestamp_encoding.py
 python methods/scale.py
 python methods/canonicalization.py
+python methods/settlement_binding.py    # binding survives an action swap?
+python methods/policy_binding.py        # silent policy rotation detected?
 python methods/reconciliation.py        # do independent parties agree?
 ```
 

@@ -14,7 +14,14 @@ import hashlib
 import json
 import sys
 
-from algovoi_substrate import action_ref, canonicalize, sha256_jcs
+from algovoi_substrate import (action_ref, canonicalize, settlement_action_binding,
+                               sha256_jcs, transition_hash)
+
+try:  # additive layer; coverage.py still runs with only algovoi-substrate
+    from algovoi_policy_binding import policy_bound_ref, policy_ref
+    _HAVE_POLICY_BINDING = True
+except Exception:
+    _HAVE_POLICY_BINDING = False
 
 # `action_ref` / the named reference is the AlgoVoi implementation, adapted to
 # AlgoVoi's own design (JCS RFC 8785 + integer-ms timestamp_ms; canon jcs-rfc8785-v1).
@@ -87,6 +94,48 @@ def _ref_all_hold() -> bool:
     return x != y
 
 
+# ---- capability bindings (real bytes; orthogonal to the 4-property matrix) ---
+
+_BTS = 1716494400123
+
+
+def _binding_ref(ar: str) -> str:
+    th = transition_hash(action_ref=ar, state="COMMITTED", transition_timestamp_ms=_BTS,
+                         authority_verified_at_ms=_BTS, revocation_check_at_ms=_BTS)
+    return settlement_action_binding(
+        action_ref=ar, transition_hash=th,
+        settlement_ref=sha256_jcs({"payment_hash": "demo-INV-1"}),
+        retention_chain_ref="sha256:" + sha256_jcs({"retention_chain": "demo-head-1"}))
+
+
+def _settlement_swap_detected() -> bool:
+    real = action_ref(agent_id="merchant-gw", action_type="payment", scope="order:INV-1", timestamp_ms=_BTS)
+    forged = action_ref(agent_id="attacker", action_type="payment", scope="order:INV-1", timestamp_ms=_BTS)
+    return _binding_ref(real) != _binding_ref(forged)
+
+
+def _forward_id_swap_detected() -> bool:
+    return "rcpt-0001" != "rcpt-0001"  # operator-assigned id is unchanged by an action swap
+
+
+# A SILENT policy rotation: same policy_id and version label, an edited rule.
+_POLICY = {"policy_id": "aml.transfer", "version": 1, "max_amount": 1000, "deny_jurisdictions": ["XX"]}
+_POLICY_ROTATED = {"policy_id": "aml.transfer", "version": 1, "max_amount": 100000, "deny_jurisdictions": []}
+
+
+def _policy_rotation_detected() -> bool | None:
+    if not _HAVE_POLICY_BINDING:
+        return None  # algovoi-policy-binding not installed
+    subject = _binding_ref(action_ref(agent_id="merchant-gw", action_type="payment",
+                                      scope="order:INV-1", timestamp_ms=_BTS))
+    return policy_bound_ref(subject, policy_ref(_POLICY)) != policy_bound_ref(subject, policy_ref(_POLICY_ROTATED))
+
+
+def _label_rotation_detected() -> bool:
+    label = lambda p: f'{p["policy_id"]}/v{p["version"]}'  # noqa: E731
+    return label(_POLICY) != label(_POLICY_ROTATED)  # label unchanged by the edit -> False
+
+
 def build_matrix() -> list[tuple[str, list[bool]]]:
     ref = _ref_all_hold()
     return [
@@ -121,6 +170,18 @@ def main() -> int:
         name = f"**{label}**" if i == 0 else label
         print(f"| {name} | " + " | ".join(cell(c) for c in cells) + " |")
     print("\n(every cell computed live from real bytes by `coverage.py`)")
+
+    # Capability bindings: a separate axis from the 4-property matrix above.
+    print("\nCapability bindings (tamper / silent-rotation detection, real bytes):")
+    print("| Binding technique | Change detected from the record alone |")
+    print("| --- | :---: |")
+    print(f"| **AlgoVoi settlement_action_binding (action swap)** | {cell(_settlement_swap_detected())} |")
+    print(f"| forward-id / operator-report (action swap) | {cell(_forward_id_swap_detected())} |")
+    pol = _policy_rotation_detected()
+    pol_cell = cell(pol) if pol is not None else "_(install algovoi-policy-binding)_"
+    print(f"| **AlgoVoi policy_bound_ref (silent policy rotation)** | {pol_cell} |")
+    print(f"| policy id/version label (or operator attestation) | {cell(_label_rotation_detected())} |")
+
     print("\nScale (real `action_ref` collisions counted from real hashes):")
     print("| Payments | second-precision dropped | integer epoch-ms dropped |")
     print("| --- | :---: | :---: |")
