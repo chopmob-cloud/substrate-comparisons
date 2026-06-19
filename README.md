@@ -146,6 +146,21 @@ millisecond, so ~1000 payments/second), but that ceiling is 1000x higher than
 second precision and sits far above any real workload. These are counted from
 real hashes, not modelled.
 
+## RFC 3339 millisecond-string grammar
+
+Pinning the timestamp to an RFC 3339 *millisecond* string does not make it
+byte-stable. One instant has several valid encodings, so honest producers still
+diverge.
+
+| Technique | Byte-reproducible across producers | Demo |
+| --- | :---: | --- |
+| AlgoVoi integer epoch-millisecond | yes (one representation) | [`methods/rfc3339_grammar.py`](./methods/rfc3339_grammar.py) |
+| RFC 3339 millisecond string | **no** (`.123Z`, `.123+00:00`, `.123000Z` are one instant, three byte sequences) | same |
+
+`methods/rfc3339_grammar.py` hashes three valid RFC 3339 encodings of a single
+instant and shows they produce three different identities, while the integer
+epoch-millisecond form has exactly one.
+
 ## Handling secondary attempts (the working method)
 
 The reason timestamp precision matters is what happens on a *secondary attempt*.
@@ -175,6 +190,21 @@ secondary-attempt handling are the same property viewed from two sides.
 `methods/canonicalization.py` shows that JCS hashes the same logical object to
 identical bytes regardless of input key order, while a naive serialization
 produces different bytes for the same object, so two implementations disagree.
+
+## Unicode normalization and UTF-8 emission
+
+RFC 8785 performs no Unicode normalization and emits printable non-ASCII as
+literal UTF-8. An implementation that normalizes a string, or escapes non-ASCII
+as `\uXXXX`, changes the bytes and the identity.
+
+| Technique | Byte-reproducible across implementations | Demo |
+| --- | :---: | --- |
+| hash the signed bytes as received (RFC 8785, literal UTF-8) | yes | [`methods/unicode_normalization.py`](./methods/unicode_normalization.py) |
+| normalize NFC/NFD, or `\u`-escape non-ASCII, before hashing | **no** | same |
+
+`methods/unicode_normalization.py` shows NFC and NFD of the same glyph hash to
+different identities, and that a `\u`-escaping serializer diverges from the
+canonical literal-UTF-8 bytes.
 
 ## Concatenation vs structured identity
 
@@ -221,12 +251,44 @@ shows the identities never match.
 binding breaks (caught), while the forward id is unchanged (not caught) -- so a
 forward id does not actually bind.
 
+## Replay resistance (instance-binding vs content-binding)
+
+A content-addressed identity is derived from content alone, so two distinct
+executions with identical content share one identity, and a replay cannot be told
+from a real second execution. Binding the action to its settlement instance keeps
+them apart.
+
+| Technique | Distinct executions stay distinct | Demo |
+| --- | :---: | --- |
+| AlgoVoi binding_ref (action_ref + settlement payment hash) | yes | [`methods/replay_resistance.py`](./methods/replay_resistance.py) |
+| content-address only (identity from content) | **no** (identical content gives one identity) | same |
+
+`methods/replay_resistance.py` shows two identical-content executions collapse to
+one content-address, while the binding_ref over each settlement instance keeps
+them distinct. The substrate is instance-bound, not only content-bound.
+
 ## Offline verifiability
 
 | Technique | Verifiable from bytes alone (no issuer call) | Demo |
 | --- | :---: | --- |
 | AlgoVoi content-addressed identity | yes | [`methods/offline_verification.py`](./methods/offline_verification.py) |
 | operator-attestation (operator-assigned id, operator-signed) | **no** (needs issuer key/endpoint; proves assertion, not truth) | same |
+
+## JWS envelope vs claims object
+
+A signed receipt can be content-addressed over the JWS compact form or over the
+JCS-canonical claims object. The compact form is not unique: any intermediary
+that re-serializes or re-signs changes it, so a hash over the envelope breaks on
+re-encoding.
+
+| Technique | Survives re-encoding by an intermediary | Demo |
+| --- | :---: | --- |
+| hash the JCS-canonical claims object | yes | [`methods/jws_reencoding.py`](./methods/jws_reencoding.py) |
+| hash the JWS compact form (header.payload.signature) | **no** (re-encode or re-sign gives different bytes) | same |
+
+`methods/jws_reencoding.py` carries the same claims through two producers and
+shows the compact-form hash diverges while the JCS claims-object hash is
+identical.
 
 ## Amount precision
 

@@ -15,12 +15,16 @@ import sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 METHODS = [
     "timestamp_encoding.py",
+    "rfc3339_grammar.py",
     "secondary_attempts.py",
     "concatenation.py",
     "canonicalization.py",
+    "unicode_normalization.py",
     "field_naming.py",
     "settlement_binding.py",
+    "replay_resistance.py",
     "offline_verification.py",
+    "jws_reencoding.py",
     "amount_precision.py",
     "number_canonicalization.py",
     "rail_agnostic.py",
