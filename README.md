@@ -89,6 +89,30 @@ Source: the public corpus
 [`chopmob-cloud/algovoi-jcs-conformance-vectors`](https://github.com/chopmob-cloud/algovoi-jcs-conformance-vectors)
 (manifest pins the sets, vectors, and the cross-validation runs). Run them yourself.
 
+### Adversarial rejection: single-implementation vs cross-implementation
+
+Rejecting a malformed input is a property of the validator, not of the bytes. A
+single-implementation conformance set can show its own reference implementation
+rejecting an attack. It cannot show that independent implementations reject it the
+same way.
+
+The AlgoVoi adversarial set is cross-validated across all eight implementations:
+every one accepts the valid control and rejects each of the eleven isolated attacks
+(a non-integer timestamp, a non-hex action reference, an empty state, a broken chain
+link, a stale content hash, and so on). Eight implementations times twelve vectors
+is 96 fail-closed verdicts, all green.
+
+| Property | single-implementation set | AlgoVoi (8 implementations) |
+| --- | :---: | :---: |
+| Input bytes agree across implementations | not shown | yes |
+| Every implementation rejects each attack identically | not shown (one impl) | 96/96 |
+
+Reference-implementation rejection runs here in
+[`methods/adversarial_rejection.py`](./methods/adversarial_rejection.py). The eight
+independent implementations all failing closed on the same attacks, with its
+attestation, is in the corpus at `composition/adversarial_gauntlet/` (one command:
+`bash run_gauntlet.sh`).
+
 Regenerate everything (methods + results + graphs) from one command:
 `python run_all.py`.
 
