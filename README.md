@@ -182,6 +182,17 @@ millisecond, so ~1000 payments/second), but that ceiling is 1000x higher than
 second precision and sits far above any real workload. These are counted from
 real hashes, not modelled.
 
+**Measured in a clean container.** A fresh `python:3.12-slim` install of the
+published packages (`algovoi-substrate`, `algovoi-policy-binding`,
+`algovoi-compliance-gate-lite` from PyPI) reproduces 1,000,000 distinct `action_ref`
+values with zero collisions, and the second-precision drop above (99.8 to 99.9
+percent) exactly. Collision freedom is a property of the construction and is the
+same on any host. Throughput is the host's: on a single core the million completed
+in about 8.5 seconds (roughly 118,000 per second), with the full `policy_ref` plus
+`policy_bound_ref` plus `gate_ref` chain at about 43,000 per second. Both scale with
+cores. A blank `node:20-slim` box reproduces the same `policy_bound_ref` and
+`gate_ref` values byte for byte from the npm packages.
+
 ## RFC 3339 millisecond-string grammar
 
 Pinning the timestamp to an RFC 3339 *millisecond* string does not make it
