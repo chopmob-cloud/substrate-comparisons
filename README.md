@@ -82,7 +82,7 @@ vector set with no independent agreement.
 
 | Vector set | Independent implementations | Byte-for-byte agreement | Sets / vectors |
 | --- | :---: | :---: | :---: |
-| **AlgoVoi JCS (RFC 8785) Substrate** | **8** (8 languages, incl. the RFC 8785 author's Java) | **880/880** | 28 / 223 |
+| **AlgoVoi JCS (RFC 8785) Substrate** | **8** (8 languages, incl. the RFC 8785 author's Java) | **880/880** | 30 / 245 |
 | single-implementation vector set | 1 | none reported | varies |
 
 Source: the public corpus
@@ -136,7 +136,7 @@ decide byte-portability and durability:
 | Canonicalization | real RFC 8785 JCS | RFC 8785 (most), naive or none (some) |
 | Timestamp form | integer epoch-ms | integer-ms or RFC-3339 string (split) |
 | Independent implementations, byte-for-byte | 8 languages, 880/880 | 1 to 8 (one reports 192/192) |
-| Conformance vectors | 28 sets / 223 vectors | 0 to ~53 |
+| Conformance vectors | 30 sets / 245 vectors | 0 to ~53 |
 | Adversarial fail-closed, cross-implementation | 96/96 (8 implementations) | 0 to a few, mostly single-implementation |
 | Signing | post-quantum (Falcon-1024 + ML-DSA) | classical (Ed25519 / ES256); one post-quantum (STARK) |
 | Specification | sole-authored, published IETF I-Ds | mix of unpublished and published drafts |
