@@ -21,6 +21,7 @@ METHODS = [
     "canonicalization.py",
     "unicode_normalization.py",
     "field_naming.py",
+    "alias_composition_layering.py",
     "settlement_binding.py",
     "policy_binding.py",
     "replay_resistance.py",

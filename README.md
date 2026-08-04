@@ -29,6 +29,27 @@ demo and read the bytes. A full failure map with the exact hashes is in
 > `algovoi-substrate` package itself (`action_ref`, `sha256_jcs`,
 > `settlement_action_binding`).
 
+## The layered architecture: L1, L2, L3
+
+This comparison is layered, and each layer is measured on its own terms.
+
+- **L1, the canonicalisation substrate.** One concrete object becomes exactly one
+  byte string (RFC 8785 JCS) and one `sha256:` content address. Small, closed, and
+  the only layer that hashes: every implementation in every language must agree on
+  its output byte for byte. Everything below the coverage matrix measures L1.
+- **L2, composition (the keystone).** Lets a downstream reference bind an upstream
+  one by name (`@issuer`) so identity, authority, policy, decision and execution
+  compose into one verdict. L2 resolves every `@name` to a concrete ref, then hands
+  a concrete object to L1. L2 never hashes; L1 never sees a name. See
+  [Alias composition](#alias-composition-l1-embedded-vs-l2-resolved-surface-scaling).
+- **L3, policy and orchestration.** Agent-to-agent trust, delegation and revocation
+  build on L2 keystones; every decision still bottoms out in an L1 content address,
+  so L3 inherits L1's guarantees rather than re-deriving them.
+
+The rule across all three: resolve and compose above, canonicalise below. Usability
+grows additively in the upper layers while the surface that must be certified (L1)
+stays fixed.
+
 ## Coverage at a glance
 
 Every cell below is computed live from real bytes by [`coverage.py`](./coverage.py)
@@ -82,7 +103,7 @@ vector set with no independent agreement.
 
 | Vector set | Independent implementations | Byte-for-byte agreement | Sets / vectors |
 | --- | :---: | :---: | :---: |
-| **AlgoVoi JCS (RFC 8785) Substrate** | **8** (8 languages, incl. the RFC 8785 author's Java) | **880/880** | 30 / 245 |
+| **AlgoVoi JCS (RFC 8785) Substrate** | **10** (10 languages, incl. the RFC 8785 author's Java) | **1226/1226** | 45 / 374 |
 | single-implementation vector set | 1 | none reported | varies |
 
 Source: the public corpus
@@ -136,7 +157,7 @@ decide byte-portability and durability:
 | Canonicalization | real RFC 8785 JCS | RFC 8785 (most), naive or none (some) |
 | Timestamp form | integer epoch-ms | integer-ms or RFC-3339 string (split) |
 | Independent implementations, byte-for-byte | 8 languages, 880/880 | 1 to 8 (one reports 192/192) |
-| Conformance vectors | 30 sets / 245 vectors | 0 to ~53 |
+| Conformance vectors | 45 sets / 374 vectors | 0 to ~53 |
 | Adversarial fail-closed, cross-implementation | 96/96 (8 implementations) | 0 to a few, mostly single-implementation |
 | Signing | post-quantum (Falcon-1024 + ML-DSA) | classical (Ed25519 / ES256); one post-quantum (STARK) |
 | Specification | sole-authored, published IETF I-Ds | mix of unpublished and published drafts |
@@ -314,6 +335,29 @@ JCS fixes key *order* and value encoding, but it canonicalises whatever field
 
 `methods/field_naming.py` hashes the same logical action under both conventions and
 shows the identities never match.
+
+## Alias composition: L1-embedded vs L2-resolved surface scaling
+
+Content-addressed chains reference each link by a 71-character `sha256:` hash;
+authors would rather write `@issuer`. There are two places to add that. Fold names
+into the canonicalisation core (L1) and correctness depends on every name in every
+reference position, so the positive corpus grows as `positions x vocabulary` and the
+forgery surface grows with it. Resolve names one layer up (L2) and the core only ever
+sees a concrete object: zero alias vectors, a fixed grammar for any vocabulary.
+
+| Technique | Certified surface as the alias vocabulary grows | Demo |
+| --- | :---: | --- |
+| L2-resolved (resolve `@name` to a ref, then canonicalise) | constant: 0 L1 vectors + a 4-rule grammar | [`methods/alias_composition_layering.py`](./methods/alias_composition_layering.py) |
+| L1-embedded (teach the core about names) | grows as positions x vocabulary | same |
+
+`methods/alias_composition_layering.py` resolves a real `@issuer` reference and shows
+the object handed to L1 carries no `@name`: its `sha256:` equals the ref of the
+hand-substituted concrete object. It then counts the alias-eligible reference
+positions in the live corpus (`P`, read from the sibling checkout so it stays
+truthful) and materialises the L1-embedded corpus at 100 names: `P x 100` genuinely
+distinct canonical objects, every one a vector a maintainer would have to ship and
+keep green in every language. The L2-resolved surface stays the same 4-rule grammar
+whether the vocabulary is 1 or 10,000.
 
 ## Settlement &lt;-&gt; action binding
 

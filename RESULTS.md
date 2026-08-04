@@ -177,6 +177,37 @@ endpoint, so the record cannot be verified from itself.
   conformance value. Detectability only -- acting on the mismatch is a runtime
   verifier decision, not part of the construction.)
 
+## 15. Aliases folded into L1 -> conformance surface grows with the alias vocabulary
+
+`methods/alias_composition_layering.py`
+
+Authors want to write `@issuer`, not a 71-character hash. There are two places to add
+that, and only one keeps the certified surface fixed.
+
+- L2 resolves the name to a concrete ref *before* L1 canonicalises, so the core never
+  sees a name:
+  - `@issuer` -> `b0c957e77cc10a4bd5c6ca34d817dc1de0490a4b7df2aadcac61b4727e670f89`
+  - the object then handed to L1 hashes to
+    `f5686608a6488447de777e7a5e437ed9c1e231c79b9dec44240a6a96ff3cfb63`, which equals the
+    ref of the hand-substituted concrete object. No `@name` reaches the core.
+- If L1 understood names instead, correctness would depend on every name in every
+  reference position. Counted from the live corpus (P = 652 alias-eligible `sha256:`
+  positions):
+
+  | Alias vocabulary | L1-embedded positive vectors (P x V) | L2-resolved surface |
+  | --- | :---: | :---: |
+  | 10 names | 6,520 | 4-rule grammar |
+  | 100 names | 65,200 | 4-rule grammar |
+  | 10,000 names | 6,520,000 | 4-rule grammar |
+
+  At 100 names the demo materialises and canonicalises the L1-embedded set: 65,200
+  genuinely distinct canonical objects, every one a vector a maintainer would ship and
+  keep green in every language. The L2-resolved surface stays the same 4 rules for any
+  vocabulary.
+- Consequence: fold aliases into the core and the certified surface (and the forgery
+  surface) grows as positions x vocabulary; resolve them at L2 and it stays fixed.
+  Usability grows additively; integrity stays constant.
+
 ## The cross-cutting failure: reconciliation
 
 `methods/reconciliation.py`
