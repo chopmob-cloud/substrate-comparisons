@@ -4,6 +4,9 @@
 
 # Substrate Methods: a reproducible comparison
 
+
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](./LICENSE)
+
 Several methods are in use for building tamper-evident records of agentic
 payments. This repository puts the common ones side by side and lets you decide
 with **reproducible bytes, not opinion**.
